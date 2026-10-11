@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>چرخ محیط | ریاضی چهارم</title>
+<style>
+  :root{
+    --red-dark:#7a0c0c;
+    --red:#b3141e;
+    --red-mid:#d9262f;
+    --red-light:#ff6b6b;
+    --gold:#ffd166;
+    --cream:#fff6ec;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Vazirmatn','Tahoma',sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--red-mid), var(--red-dark) 70%);
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:16px;
+    color:var(--cream);
+    overflow-x:hidden;
+  }
+  .stage{
+    width:100%; max-width:520px;
+    background:rgba(0,0,0,0.15);
+    border-radius:28px;
+    padding:22px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    border:3px solid var(--gold);
+    position:relative;
+  }
+  .screen{display:none; text-align:center;}
+  .screen.active{display:block;}
+
+  h1{
+    font-size:1.5rem; color:var(--gold);
+    margin-bottom:8px; text-shadow:0 2px 4px rgba(0,0,0,0.4);
+  }
+  .sub{color:var(--cream); opacity:0.9; margin-bottom:20px; font-size:0.95rem;}
+
+  .shapes{display:flex; justify-content:center; gap:18px; margin-bottom:18px;}
+  .square-icon, .tri-icon{width:44px; height:44px;}
+  .square-icon{border:5px solid var(--gold); border-radius:6px;}
+  .tri-icon{
+    width:0; height:0;
+    border-left:24px solid transparent;
+    border-right:24px solid transparent;
+    border-bottom:44px solid var(--gold);
+  }
+
+  input[type=text]{
+    width:100%; padding:14px; border-radius:14px; border:none;
+    font-size:1.05rem; text-align:center; margin-bottom:16px;
+    font-family:inherit; background:var(--cream); color:var(--red-dark);
+    font-weight:bold;
+  }
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:14px;
+    padding:14px 28px; font-size:1.05rem; font-weight:bold;
+    background:linear-gradient(180deg, var(--gold), #e0a800);
+    color:var(--red-dark); box-shadow:0 6px 0 #a97400;
+    transition:transform 0.08s;
+  }
+  button:active{transform:translateY(4px); box-shadow:0 2px 0 #a97400;}
+  button:disabled{opacity:0.5; cursor:default;}
+
+  .player-name{
+    background:var(--gold); color:var(--red-dark); font-weight:bold;
+    padding:6px 16px; border-radius:20px; display:inline-block; margin-bottom:10px;
+    font-size:0.9rem;
+  }
+
+  .score-bar{
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(0,0,0,0.25); border-radius:14px; padding:10px 16px; margin-bottom:16px;
+    font-size:0.9rem;
+  }
+  .score-bar b{color:var(--gold); font-size:1.1rem;}
+
+  .wheel-wrap{position:relative; width:280px; height:280px; margin:0 auto 20px;}
+  .pointer{
+    position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+    width:0; height:0; z-index:5;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-top:26px solid var(--gold);
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  }
+  #wheel{
+    width:280px; height:280px; border-radius:50%;
+    border:6px solid var(--gold);
+    box-shadow:0 0 0 4px var(--red-dark), 0 10px 25px rgba(0,0,0,0.5);
+    transition: transform 3.5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+  }
+  .hub{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:50px; height:50px; border-radius:50%;
+    background:radial-gradient(circle, var(--gold), #c99400);
+    border:3px solid var(--red-dark);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; color:var(--red-dark); font-size:1.3rem; z-index:4;
+  }
+
+  #spinBtn{width:100%; font-size:1.15rem;}
+
+  .qcard{
+    background:var(--cream); color:var(--red-dark); border-radius:18px;
+    padding:20px; margin-bottom:16px; text-align:center;
+  }
+  .qcard .qnum{
+    display:inline-block; background:var(--red); color:var(--cream);
+    padding:4px 14px; border-radius:12px; font-size:0.85rem; margin-bottom:10px;
+    font-weight:bold;
+  }
+  .qcard .qtext{font-size:1.15rem; font-weight:bold; line-height:1.9;}
+
+  .options{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+  .opt{
+    background:var(--red-mid); color:var(--cream); border-radius:14px;
+    padding:14px; font-size:1.1rem; font-weight:bold; border:2px solid transparent;
+    cursor:pointer; transition:0.15s;
+  }
+  .opt:hover{background:var(--red-light);}
+  .opt.correct{background:#2e8b57; border-color:var(--gold);}
+  .opt.wrong{background:#555; opacity:0.6;}
+  .opt.disabled{pointer-events:none;}
+
+  .feedback{
+    min-height:34px; font-size:1.15rem; font-weight:bold; margin-bottom:10px;
+  }
+  .feedback.good{color:#ffe066;}
+  .feedback.bad{color:#ffb3b3;}
+
+  .final{font-size:1.05rem; line-height:2;}
+  .final .big{font-size:2.4rem; color:var(--gold); font-weight:bold;}
+  .stars{font-size:1.8rem; margin:10px 0; letter-spacing:6px;}
+
+  @keyframes pop{0%{transform:scale(0.5); opacity:0;}70%{transform:scale(1.15);}100%{transform:scale(1); opacity:1;}}
+  .pop{animation:pop 0.35s ease;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- صفحه اول: نام دانش‌آموز -->
+  <div class="screen active" id="screen-name">
+    <div class="shapes"><div class="square-icon"></div><div class="tri-icon"></div></div>
+    <h1>چرخ محیط</h1>
+    <div class="sub">ریاضی چهارم دبستان — جدول ورودی و خروجی محیط مربع و مثلث متساوی‌الاضلاع</div>
+    <input type="text" id="nameInput" placeholder="نام دانش‌آموز را بنویس" maxlength="20">
+    <div id="nameError" style="color:#ffd166; font-size:0.9rem; min-height:22px; margin-bottom:6px;"></div>
+    <button onclick="startGame()">شروع بازی 🎯</button>
+  </div>
+
+  <!-- صفحه بازی -->
+  <div class="screen" id="screen-game">
+    <div class="player-name" id="playerTag"></div>
+    <div class="score-bar">
+      <span>سوال <b id="qIndex">0</b> از ۱۰</span>
+      <span>امتیاز: <b id="scoreVal">0</b></span>
+    </div>
+
+    <div id="wheelArea">
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <svg id="wheel" viewBox="0 0 280 280"></svg>
+        <div class="hub">؟</div>
+      </div>
+      <button id="spinBtn" onclick="spinWheel()">چرخاندن چرخ 🎡</button>
+    </div>
+
+    <div id="questionArea" style="display:none;">
+      <div class="qcard pop">
+        <div class="qnum" id="qLabel"></div>
+        <div class="qtext" id="qText"></div>
+      </div>
+      <div class="options" id="optionsArea"></div>
+      <div class="feedback" id="feedback"></div>
+      <button id="nextBtn" style="display:none; width:100%;" onclick="afterAnswer()">ادامه ➜</button>
+    </div>
+  </div>
+
+  <!-- صفحه پایانی -->
+  <div class="screen" id="screen-final">
+    <h1>🏆 پایان بازی</h1>
+    <div class="final">
+      آفرین <b id="finalName"></b>!<br>
+      <div class="big" id="finalScore"></div>
+      <div class="stars" id="finalStars"></div>
+      <div id="finalMsg"></div>
+    </div>
+    <button onclick="location.reload()">بازی دوباره 🔄</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {q:"مربعی با ضلع ۳ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۹","۱۲","۶","۱۵"], correct:"۱۲"},
+  {q:"محیط یک مربع ۲۰ سانتی‌متر است. اندازه هر ضلع آن چند سانتی‌متر است؟", opts:["۴","۵","۱۰","۸"], correct:"۵"},
+  {q:"مثلث متساوی‌الاضلاعی با ضلع ۴ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۸","۱۶","۱۲","۲۰"], correct:"۱۲"},
+  {q:"محیط یک مثلث متساوی‌الاضلاع ۱۵ سانتی‌متر است. اندازه هر ضلع چند سانتی‌متر است؟", opts:["۳","۴","۶","۵"], correct:"۵"},
+  {q:"مربعی با ضلع ۷ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۲۱","۲۸","۳۵","۱۴"], correct:"۲۸"},
+  {q:"مثلث متساوی‌الاضلاعی با ضلع ۶ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۱۲","۲۴","۱۸","۳۰"], correct:"۱۸"},
+  {q:"محیط یک مربع ۳۶ سانتی‌متر است. اندازه هر ضلع چند سانتی‌متر است؟", opts:["۸","۹","۷","۱۲"], correct:"۹"},
+  {q:"محیط یک مثلث متساوی‌الاضلاع ۲۷ سانتی‌متر است. اندازه هر ضلع چند سانتی‌متر است؟", opts:["۷","۸","۹","۱۰"], correct:"۹"},
+  {q:"مربعی با ضلع ۱۰ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۳۰","۴۰","۲۰","۵۰"], correct:"۴۰"},
+  {q:"مثلث متساوی‌الاضلاعی با ضلع ۸ سانتی‌متر داریم. محیط آن چند سانتی‌متر است؟", opts:["۱۶","۲۴","۲۸","۳۲"], correct:"۲۴"}
+];
+
+let playerName = "";
+let score = 0;
+let answeredCount = 0;
+let remaining = [];
+let currentQ = null;
+
+const encouragements = ["👏 آفرین!", "🌟 عالی بود!", "🎉 درست گفتی!", "💪 دمت گرم!", "✅ درسته!", "🔥 فوق‌العاده!"];
+const tryAgainMsgs = ["نه، جواب درست این نبود 🙂", "کمی دقت کن، این درست نبود", "این یکی اشتباه بود، اشکالی نداره"];
+
+function startGame(){
+  const val = document.getElementById('nameInput').value.trim();
+  if(!val){
+    document.getElementById('nameError').textContent = "لطفاً نام خود را بنویس!";
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  playerName = val;
+  document.getElementById('playerTag').textContent = "👤 " + playerName;
+  remaining = questions.map((q,i)=>i);
+  buildWheel();
+  document.getElementById('screen-name').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+}
+
+function buildWheel(){
+  const svg = document.getElementById('wheel');
+  const n = 10;
+  const colors = ['#b3141e','#7a0c0c'];
+  const cx=140, cy=140, r=140;
+  let html = '';
+  for(let i=0;i<n;i++){
+    const a1 = (i*36 - 90) * Math.PI/180;
+    const a2 = ((i+1)*36 - 90) * Math.PI/180;
+    const x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
+    const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
+    const mid = ((i*36+18) - 90) * Math.PI/180;
+    const tx = cx + (r*0.68)*Math.cos(mid), ty = cy + (r*0.68)*Math.sin(mid);
+    html += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z" fill="${colors[i%2]}" stroke="#ffd166" stroke-width="1.5"/>`;
+    html += `<text x="${tx}" y="${ty}" fill="#fff6ec" font-size="20" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${i+1}</text>`;
+  }
+  svg.innerHTML = html;
+}
+
+let wheelRotation = 0;
+function spinWheel(){
+  if(remaining.length === 0) return;
+  document.getElementById('spinBtn').disabled = true;
+
+  const pickIdx = Math.floor(Math.random()*remaining.length);
+  const qIndex = remaining[pickIdx];
+  remaining.splice(pickIdx,1);
+  currentQ = qIndex;
+
+  const segAngle = 360/10;
+  const targetSeg = qIndex;
+  const stopAngle = 360*6 + (360 - (targetSeg*segAngle + segAngle/2)) ;
+  wheelRotation = stopAngle;
+
+  const wheel = document.getElementById('wheel');
+  wheel.style.transform = `rotate(${wheelRotation}deg)`;
+
+  setTimeout(()=>{ showQuestion(qIndex); }, 3600);
+}
+
+function showQuestion(idx){
+  const q = questions[idx];
+  answeredCount++;
+  document.getElementById('qIndex').textContent = toFa(answeredCount);
+  document.getElementById('qLabel').textContent = "سوال " + toFa(answeredCount);
+  document.getElementById('qText').textContent = q.q;
+
+  const optsArea = document.getElementById('optionsArea');
+  optsArea.innerHTML = '';
+  q.opts.forEach(opt=>{
+    const div = document.createElement('div');
+    div.className = 'opt';
+    div.textContent = opt;
+    div.onclick = ()=> selectAnswer(div, opt, q.correct);
+    optsArea.appendChild(div);
+  });
+
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  document.getElementById('wheelArea').style.display = 'none';
+  document.getElementById('questionArea').style.display = 'block';
+}
+
+function selectAnswer(el, chosen, correct){
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach(o=>o.classList.add('disabled'));
+
+  const fb = document.getElementById('feedback');
+  if(chosen === correct){
+    el.classList.add('correct');
+    score += 10;
+    document.getElementById('scoreVal').textContent = toFa(score);
+    fb.textContent = encouragements[Math.floor(Math.random()*encouragements.length)];
+    fb.className = 'feedback good';
+  } else {
+    el.classList.add('wrong');
+    opts.forEach(o=>{ if(o.textContent===correct) o.classList.add('correct'); });
+    fb.textContent = tryAgainMsgs[Math.floor(Math.random()*tryAgainMsgs.length)];
+    fb.className = 'feedback bad';
+  }
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+function afterAnswer(){
+  document.getElementById('questionArea').style.display = 'none';
+  if(remaining.length === 0){
+    finishGame();
+  } else {
+    document.getElementById('wheelArea').style.display = 'block';
+    document.getElementById('spinBtn').disabled = false;
+  }
+}
+
+function finishGame(){
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-final').classList.add('active');
+  document.getElementById('finalName').textContent = playerName;
+  document.getElementById('finalScore').textContent = toFa(score) + " از ۱۰۰";
+
+  let stars = 1;
+  if(score >= 50) stars = 2;
+  if(score >= 80) stars = 3;
+  if(score === 100) stars = 4;
+  document.getElementById('finalStars').textContent = '⭐'.repeat(stars);
+
+  let msg = "";
+  if(score === 100) msg = "محیط مربع و مثلث رو کامل یاد گرفتی! 🎉";
+  else if(score >= 70) msg = "خیلی خوب بود، همینطور تمرین کن! 💪";
+  else msg = "بازی رو دوباره امتحان کن تا بهتر بشی! 🌟";
+  document.getElementById('finalMsg').textContent = msg;
+}
+
+function toFa(num){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(num).split('').map(d=> fa[d] !== undefined ? fa[d] : d).join('');
+}
+</script>
+
+</body>
+</html>
